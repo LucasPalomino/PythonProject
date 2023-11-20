@@ -78,11 +78,18 @@ company_location = px.scatter_geo(geo_data,
 
 # Adding elements to page
 st.title('Cell-Based Meat Companies')
-st.subheader('A small sample of companies creating meat from cell cultures.')
 
 st.markdown('---')
 
 st.image(company_logos)
+
+st.markdown('---')
+
+st.subheader('A small sample of companies creating meat from cell cultures.')
+
+st.markdown('''This dashboard contains information about 20 companies as of November 2023.
+            The interactive boxes allow to filter the data displayed in the visualizations below.
+            The source code is uploaded [here](https://github.com/LucasPalomino/PythonProject).''')
 
 st.markdown('---')
 
@@ -95,7 +102,7 @@ col1, col2 = st.columns(2)
 col1.plotly_chart(bar_chart, use_container_width = True)
 col2.plotly_chart(bubble_chart, use_container_width = True)
 
-# Complete dataset table
+# Displaying dataset table without coordinates
 st.dataframe(filtered_dataset.drop(columns = ['Latitude', 'Longitude']))
 
 st.markdown('---')
