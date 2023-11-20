@@ -3,54 +3,99 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-st.set_page_config(page_title ="Lab Grown Meat Companies, November 2023",
-                  page_icon =":bar_chart:",
-                  layout = "centered")
+# Page Configuration
+st.set_page_config(page_title = 'Lab Grown Meat Companies, November 2023',
+                  page_icon = ':bar_chart:',
+                  layout = 'centered')
 
-df = pd.read_excel(
-    io ='PythonProjectDataset.xlsx',
-    engine ='openpyxl',
-    sheet_name ='Sheet1',
-    usecols ='A:G',
-    nrows = 25,
-)
+# Importing Data
+dataset = pd.read_excel(
+    io = 'PythonProjectDataset.xlsx',
+    engine = 'openpyxl',
+    sheet_name = 'Sheet1',
+    usecols = 'A:H',
+    dtype={'Year Founded': str},
+    nrows = 25)
 
-# --- Load Assets ---
-img_company_logos = Image.open("images/companies.png")
+# Loading image
+company_logos = Image.open('images/companies.png')
 
-# --- Main Page ---
+# Side Bar options
+animal_product_options = dataset['Animal Product'].unique()
+country_options = dataset['Country'].unique()
+funding_stage_options = dataset['Funding Stage'].unique()
 
-st.title("Lab Grown Meat Companies, November 2023")
-st.markdown("Outlook of companies in the sector of for lab grown meat")
-st.image(img_company_logos)
-st.button('Go to company overview')
-st.dataframe(df)
+# Sidebar selection boxes
+st.sidebar.title('Filter Selection')
+animal_product = st.sidebar.selectbox('Animal Product', options=['(No Selection)'] + list(animal_product_options))
+country = st.sidebar.selectbox('Country', options=['(No Selection)'] + list(country_options))
+funding_stage = st.sidebar.selectbox('Funding Stage', options=['(No Selection)'] + list(funding_stage_options))
 
-product_frequency = df['Animal Product'].value_counts()
-product_frequency = product_frequency.rename_axis('Animal Product').reset_index(name='Count')
-bar_chart = px.bar(product_frequency, x='Animal Product', y='Count', title ='Frequency of Product')
-st.plotly_chart(bar_chart)
+# Filtering the dataset based on user selection
+filtered_dataset = dataset
 
-# --- Side Bar ---
-st.sidebar.title('Navigation')
+if animal_product != '(No Selection)':
+    filtered_dataset = filtered_dataset[filtered_dataset['Animal Product'] == animal_product]
 
-options = st.sidebar.radio('Sort by',
-options = ['Animal Product',
-           'Country',
-           'Funding Stage'])
+if country != '(No Selection)':
+    filtered_dataset = filtered_dataset[filtered_dataset['Country'] == country]
+
+if funding_stage != '(No Selection)':
+    filtered_dataset = filtered_dataset[filtered_dataset['Funding Stage'] == funding_stage]
 
 
-# --- Visualizations ---
- 
+# Creating plotly visualizations
+def calculate_frequency(dataframe):
+    count_list = filtered_dataset[dataframe].value_counts().reset_index()
+    return(count_list)
 
-if options == 'Animal Prdouct':
-    st.write('Working on it')
-elif options == 'Country':
-    st.write('Hello!')
-elif options == 'Funding Stage':
-    #show graph filtered by country
-    print('tempfile')
+# Bar Chart
+product_frequency = calculate_frequency('Animal Product')
+bar_chart = px.bar(product_frequency, 
+                   x = 'Animal Product', 
+                   y = 'count', 
+                   labels = {'count' : 'Number of Companies'},
+                   title = 'Type of Product by Company')
 
-# --- Commands to test ---
-# streamlit run app.py
+# Bubble Chart
+year_frequency = calculate_frequency('Year Founded')
+bubble_chart = px.scatter(year_frequency, 
+                          x ='Year Founded', 
+                          y = 'count',
+                          range_y = [0,7],
+                          labels ={'count' : 'Number of Companies'},
+                          title = 'Company Year Founded')
 
+# Geo Map
+geo_data = filtered_dataset.drop_duplicates(subset = 'Company Name')
+company_location = px.scatter_geo(geo_data, 
+                     labels = 'City',
+                     lat = 'Latitude', 
+                     lon = 'Longitude',
+                     color = 'Country',
+                     title = 'Company Location',
+                     template = 'plotly')
+
+# Adding elements to page
+st.title('Cell-Based Meat Companies')
+st.subheader('A small sample of companies creating meat from cell cultures.')
+
+st.markdown('---')
+
+st.image(company_logos)
+
+st.markdown('---')
+
+st.plotly_chart(company_location, use_container_width = True)
+
+st.markdown('---')
+
+# Adding graphs in columns
+col1, col2 = st.columns(2)
+col1.plotly_chart(bar_chart, use_container_width = True)
+col2.plotly_chart(bubble_chart, use_container_width = True)
+
+# Complete dataset table
+st.dataframe(filtered_dataset.drop(columns = ['Latitude', 'Longitude']))
+
+st.markdown('---')
